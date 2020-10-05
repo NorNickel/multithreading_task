@@ -1,0 +1,52 @@
+package ru.digitalhabbits;
+
+
+import ru.digitalhabbits.model.CalculateResult;
+import ru.digitalhabbits.model.DownloadResult;
+
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.List;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+
+public class Main {
+
+    public static void main(String[] args) throws InterruptedException, ExecutionException {
+        Download d = new Download();
+        Calculate c = new Calculate();
+        int finishCounter = 0;
+        long start = Calendar.getInstance().getTimeInMillis();
+
+        List<Future<DownloadResult>> downloadResults = new ArrayList<>();
+        ExecutorService downloadService = Executors.newFixedThreadPool(3000);
+        for (int i = 0; i < 30000; i++) {
+            DownloadCallable task = new DownloadCallable(d, i);
+            Future<DownloadResult> futureResult = downloadService.submit(task);
+            downloadResults.add(futureResult);
+        }
+        downloadService.shutdown();
+
+        ExecutorService calculateService = Executors.newFixedThreadPool(8);
+        List<Future<CalculateResult>> calcResults = new ArrayList<>();
+
+        for (Future<DownloadResult> futureResult : downloadResults) {
+            calcResults.add(calculateService.submit(new CalculateCallable(c, futureResult.get())));
+        }
+        calculateService.shutdown();
+
+        for (Future<CalculateResult> result : calcResults) {
+            if (result.get().found) {
+                finishCounter++;
+            }
+        }
+
+        long end = Calendar.getInstance().getTimeInMillis();
+
+        System.out.println("Total success checks: " + finishCounter);
+        System.out.println("Time: " + (end - start)  + " ms");
+    }
+
+}
