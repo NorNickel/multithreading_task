@@ -22,7 +22,7 @@ public class Main {
 
         List<Future<DownloadResult>> downloadResults = new ArrayList<>();
         ExecutorService downloadService = Executors.newFixedThreadPool(3000);
-        for (int i = 0; i < 30000; i++) {
+        for (int i = 0; i < 100_000; i++) {
             DownloadCallable task = new DownloadCallable(d, i);
             Future<DownloadResult> futureResult = downloadService.submit(task);
             downloadResults.add(futureResult);
